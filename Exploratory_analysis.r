@@ -59,4 +59,4 @@ ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
     fill = "Category"
   )
 # Save the plot
-ggsave("Plots/sentiment_scores_plot.png", width = 10, height = 6, units = "in")
+ggsave("Plots/sentiment_scores_plot.png", width = 10, height = 6, bg = "white")
