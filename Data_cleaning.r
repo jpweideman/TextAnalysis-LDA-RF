@@ -50,12 +50,12 @@ dev.off()
 
 
 
-# Group by the "Label" column and create word clouds for each category
-cleaned_df %>%
-  count(Label, word, sort = TRUE) %>%  # Count word frequencies by category
-  group_split(Label) %>%              # Split the data by category
-  walk(function(data) {
-    category <- unique(data$Label)    # Get the category name
+# # Group by the "Label" column and create word clouds for each category
+# cleaned_df %>%
+#   count(Label, word, sort = TRUE) %>%  # Count word frequencies by category
+#   group_split(Label) %>%              # Split the data by category
+#   walk(function(data) {
+#     category <- unique(data$Label)    # Get the category name
     
 # # Word cloud for each category 
 # png(filename = paste0("Plots/word_cloud_", category, ".png"), width = 800, height = 800)
@@ -69,13 +69,13 @@ wordcloud_list <- cleaned_df %>%
   group_split(Label) %>%              # Split data by category
   map(function(data) {
     category <- unique(data$Label)    # Get the category name
-    
+
     # Save each word cloud as a temporary image
     temp_file <- tempfile(fileext = ".png")
     png(temp_file, width = 400, height = 400)  # Increase the image size for larger word clouds
     with(data, wordcloud(words = word, freq = n, min.freq = 150, random.order = FALSE, colors = rainbow(4)))
     dev.off()
-    
+
     # Create a ggplot object with the word cloud as an image and a title
     ggplot() +
       annotation_custom(
@@ -92,3 +92,4 @@ wordcloud_list <- cleaned_df %>%
 combined_plot <- grid.arrange(grobs = wordcloud_list, ncol = 2)  # Adjust ncol for layout
 # Save the combined grid as a single image
 ggsave(filename = "Plots/all_wordclouds_combined.png", plot = combined_plot, width = 12,  height = 12)
+
