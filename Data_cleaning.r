@@ -3,17 +3,23 @@ library(tidyverse)
 library(tidytext)
 
 # Read in your data (replace 'df_file.csv' with your file path)
-df <- read_csv("df_file.csv")
+df <- read_csv("Data/df_file.csv")
+df
+# Create a column that numbers the rows
+df <- df %>%
+  mutate(Text_number = row_number())
+df
 
-# Tokenize the combined text into words
+# Tokenize the text column into words, but differentiate between different texts
 cleaned_df <- df |>
-  unnest_tokens(word, combined_text) |>
+  unnest_tokens(word, Text) |>
   # Remove stop words
   anti_join(stop_words, by = "word") |>
   # Remove numbers
   filter(!str_detect(word, "^[0-9]+$")) |>
   # Remove punctuation
   filter(!str_detect(word, "[[:punct:]]"))
+cleaned_df
 
 # Count word frequencies (optional)
 word_freq <- cleaned_df |>
@@ -28,6 +34,8 @@ cleaned_df <- cleaned_df %>%
     mutate(word = str_replace_all(word, "â", "")) %>%
     filter(word != "")
 
+word_freq <- cleaned_df |>
+  count(word, sort = TRUE)
 
 cleaned_df |>
   count(word, sort = TRUE) |>
@@ -48,8 +56,6 @@ word_freq %>%
 dev.copy(png, "Plots/word_cloud.png", width = 800, height = 800)
 dev.off()
 
-
-
 # # Group by the "Label" column and create word clouds for each category
 # cleaned_df %>%
 #   count(Label, word, sort = TRUE) %>%  # Count word frequencies by category
@@ -63,6 +69,7 @@ dev.off()
 # dev.off()                       
 # })
 
+library(gridExtra)
 # Word cloud for each category
 wordcloud_list <- cleaned_df %>%
   count(Label, word, sort = TRUE) %>%  # Count word frequencies by category
@@ -93,3 +100,5 @@ combined_plot <- grid.arrange(grobs = wordcloud_list, ncol = 2)  # Adjust ncol f
 # Save the combined grid as a single image
 ggsave(filename = "Plots/all_wordclouds_combined.png", plot = combined_plot, width = 12,  height = 12)
 
+#save the cleaned data
+write_csv(cleaned_df, "Data/cleaned_df.csv")
