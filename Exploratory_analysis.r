@@ -2,6 +2,7 @@
 library(tidyverse)
 library(tidytext)
 library(sentimentr)
+library(qdap)
 
 # Read the dataset
 cleaned_df <- read.csv("Data/cleaned_df.csv")
@@ -16,7 +17,7 @@ sentiment_scores <- cleaned_df %>%
 # View the sentiment scores
 print(sentiment_scores)
 
-# Visualize the sentiment scores
+# Visualize the sentiment scores (average polarity)
 # Aggregate tokenized words back into sentences
 cleaned_df <- read.csv("Data/cleaned_df.csv", stringsAsFactors = FALSE)
 reconstructed_text <- cleaned_df %>%
@@ -40,7 +41,7 @@ sentiment_results <- reconstructed_text %>%
   )
 # Results
 print(sentiment_results)
-# Visualize sentiment scores by label
+# Visualize sentiment scores by Category
 library(ggplot2)
 ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
   geom_col(alpha = 0.8) +
@@ -54,3 +55,33 @@ ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
 # Save the plot
 ggsave("Plots/sentiment_scores_plot.png", width = 10, height = 6, bg = "white")
 
+
+
+# Visualize the distribution of polarity with box plot
+# Sentiment analysis using qdap::polarity()
+sentiment_results <- reconstructed_text %>%
+  rowwise() %>%
+  mutate(
+    polarity_score = polarity(full_text)$all$polarity,
+    word_count = polarity(full_text)$all$wc
+  ) %>%
+  ungroup()
+# Convert Label to a factor for proper grouping and aesthetic handling
+sentiment_results <- sentiment_results %>%
+  mutate(Label = as.factor(Label))  # Convert Label to factor
+# Box plot
+ggplot(sentiment_results, aes(x = Label, y = polarity_score, fill = Label)) +
+  geom_boxplot(alpha = 0.7, outlier.size = 0.4) +  # Default includes outliers
+  theme_minimal() +
+  labs(
+    title = "Polarity Score Box Plot by Category",
+    x = "Category",
+    y = "Polarity Score",
+    fill = "Category"
+  ) +
+  theme(
+    legend.position = "none",  # Hide legend
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for clarity
+  )
+# Save the box plot
+ggsave("Plots/sentiment_box_plot.png", width = 10, height = 6, bg = "white")
