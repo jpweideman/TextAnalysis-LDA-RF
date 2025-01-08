@@ -8,6 +8,9 @@ library(qdap)
 cleaned_df <- read.csv("Data/cleaned_df.csv")
 cleaned_df
 
+
+## Sentiment Analysis
+
 # Perform sentiment analysis for each Label
 sentiment_scores <- cleaned_df %>%
     inner_join(get_sentiments("bing")) %>%
@@ -111,3 +114,75 @@ category_sentiment %>%
   coord_flip()
 # Save the plot
 ggsave("Plots/top_words_contributing_to_sentiment_by_category.png", width = 10, height = 6, bg = "white")
+
+
+## Readability Analysis
+
+library(quanteda.textmodels)
+library(quanteda.textstats)
+library(quanteda.textplots)
+library(dplyr)
+library(stringi)
+library(quanteda)
+library(RColorBrewer)
+
+# Read the reconstructed cleaned data
+cleaned_df <- read.csv("Data/reconstructed_cleaned_df.csv")
+
+# Perform readability analysis
+readability_results <- cleaned_df %>%
+  mutate(readability = textstat_readability(as.character(full_text), 
+                                            remove_hyphens = TRUE, 
+                                            measure = c("Flesch", "Flesch.Kincaid", "Flesch.PSK", "Danielson.Bryan")))
+
+# Define the Gulpease function
+gulpease <- function(x, intermediate = FALSE) {
+  dati.x = quanteda.textstats::textstat_readability(x, intermediate = TRUE)
+  TotP = dati.x$W
+  LP = 10 * dati.x$C
+  FR = 300 * dati.x$St
+  gulpease = 89 + (FR - LP) / TotP
+  istruzione = dplyr::case_when(
+    gulpease > 80 ~ "elementare",
+    gulpease > 60 & gulpease < 80 ~ "media",
+    gulpease > 40 & gulpease < 60 ~ "superiore"
+  )
+  if (intermediate == TRUE)
+    tibble::tibble(gulpease(x), (dati.x)[, 3:5])
+  else
+    tibble::tibble("document" = dati.x$document, gulpease, istruzione)
+}
+
+# Apply the Gulpease function to the dataset
+cleaned_df <- cleaned_df %>%
+  mutate(gulpease = gulpease(as.character(full_text))$gulpease,
+         Label = as.factor(Label))
+
+# Calculate the average Gulpease Index for each label
+label_averages <- cleaned_df %>%
+  group_by(Label) %>%
+  summarize(avg_gulpease = mean(gulpease, na.rm = TRUE))  # Calculate averages
+# Plot readability scores with averages
+ggplot(cleaned_df, aes(x = Label, y = gulpease, color = Label)) +
+  geom_point(alpha = 0.6, size = 2) +  # Add individual points
+  geom_smooth(se = TRUE, color = "black", alpha = 0.3) +  # Add trend line
+  geom_point(data = label_averages, aes(x = Label, y = avg_gulpease), 
+             color = "black", size = 6, shape = 4) +  # Add averages as black X marks
+  geom_text(data = label_averages, 
+            aes(x = as.numeric(Label) + 0.1, y = avg_gulpease, 
+                label = paste0("Avg: ", round(avg_gulpease, 1))), 
+            hjust = 0, color = "black", size = 6) +  # Add text to the side
+  labs(
+    title = "Gulpease Index by Category",
+    x = "Category",
+    y = "Gulpease Index"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",  # Hide legend
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  scale_color_brewer(palette = "Set1")  # Use a color palette for points
+# Save the plot
+ggsave("Plots/readability.png", width = 12, height = 8, bg = "white")
