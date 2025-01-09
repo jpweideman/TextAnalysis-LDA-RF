@@ -97,10 +97,9 @@ ggplot(sentiment_results, aes(x = Label, y = polarity_score, fill = Label)) +
   ) +
   theme(
     legend.position = "none",  # Hide legend
-    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for clarity
   )
 # Save the box plot
-ggsave("Plots/sentiment_polarity_box_plot.png", width = 8, height = 6, bg = "white")
+ggsave("Plots/sentiment_polarity_box_plot.png", width = 6, height = 6, bg = "white")
 
 # Perform sentiment analysis using the Bing lexicon for each category in the Label column
 # Read the reconstructed cleaned data
