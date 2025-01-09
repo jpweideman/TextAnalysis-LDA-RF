@@ -9,7 +9,9 @@ df
 df <- df %>%
   mutate(Text_number = row_number())
 df
-
+#replace the catgories with their respective labels
+df$Label <- factor(df$Label, levels = c(0, 1, 2, 3, 4), labels = c("Politics", "Sport", "Technology", "Entertainment", "Business"))
+df
 # Tokenize the text column into words, but differentiate between different texts
 cleaned_df <- df |>
   unnest_tokens(word, Text) |>
@@ -76,7 +78,7 @@ wordcloud_list <- cleaned_df %>%
         grid::rasterGrob(png::readPNG(temp_file), interpolate = TRUE),
         xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
       ) +
-      labs(title = paste("Category", category)) +  # Add a title below each word cloud
+      labs(title = paste(category)) +  # Add a title below each word cloud
       theme_void() +
       theme(
         plot.title = element_text(size = 16, hjust = 0.5, vjust = -2)  # Center and position the title
