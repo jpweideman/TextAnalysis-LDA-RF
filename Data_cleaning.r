@@ -2,7 +2,7 @@
 library(tidyverse)
 library(tidytext)
 
-# Read in your data (replace 'df_file.csv' with your file path)
+# Read in the data
 df <- read_csv("Data/df_file.csv")
 df
 # Create a column that numbers the rows
