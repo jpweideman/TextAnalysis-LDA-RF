@@ -73,7 +73,7 @@ ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
 # Save the plot
 ggsave("Plots/sentiment_scores_avg_polarity_plot.png", width = 7, height = 6, bg = "white")
 
-# Visualize the distribution of polarity with box plot
+# Visualize polarity with box plot
 # Sentiment analysis using qdap::polarity()
 sentiment_results <- reconstructed_text %>%
   rowwise() %>%
@@ -197,3 +197,61 @@ ggplot(cleaned_df, aes(x = Label, y = gulpease, color = Label)) +
   scale_color_brewer(palette = "Set1")  # Use a color palette for points
 # Save the plot
 ggsave("Plots/readability.png", width = 12, height = 8, bg = "white")
+
+
+## Analysis of distribution of the number of words/characters by category
+
+# Read the dataset
+cleaned_df <- read.csv("Data/reconstructed_cleaned_df.csv", stringsAsFactors = FALSE)
+
+# Term Frequency distribution by category
+# Tokenize the words
+category_words <- cleaned_df %>%
+  unnest_tokens(word, full_text) %>%
+  count(Label, word, sort = TRUE) %>%
+  ungroup()
+# Calculate the total number of words for each category
+total_words <- category_words %>%
+  group_by(Label) %>%
+  summarize(total = sum(n))
+category_words <- left_join(category_words, total_words, by = "Label")
+head(category_words)
+# Plot the term frequency distribution
+ggplot(category_words, aes(n/total)) +
+  geom_histogram(show.legend = FALSE, bins = 30, fill = "steelblue", color = "white") +
+  xlim(NA, 0.01) +  # Adjust the limit to focus on small term frequencies
+  facet_wrap(~Label, ncol = 2, scales = "free_y") +
+  labs(
+    title = "Term Frequency Distribution by Category",
+    x = "Term Frequency (n/total)",
+    y = "Count"
+  ) +
+  theme_minimal()
+# Save the plot
+ggsave("Plots/term_frequency_distribution.png", width = 7, height = 6, bg = "white")
+
+# Term Frequency-Inverse Focument Frequency distribution by category
+# Tokenize and calculate TF-IDF
+tf_idf_words <- cleaned_df %>%
+  unnest_tokens(word, full_text) %>%
+  count(Label, word, sort = TRUE) %>%  # Count word occurrences by category
+  bind_tf_idf(word, Label, n)          # Calculate TF-IDF
+# View the top TF-IDF words
+tf_idf_words %>%
+  arrange(desc(tf_idf)) %>%
+  head(10)  # Show the top 10 words for preview
+# Visualize the top 15 TF-IDF words for each category
+tf_idf_words %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word)))) %>%  # Order words by TF-IDF
+  group_by(Label) %>%
+  top_n(15, tf_idf) %>%  # Select top 15 TF-IDF words for each category
+  ungroup() %>%
+  ggplot(aes(word, tf_idf, fill = Label)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = NULL, y = "TF-IDF") +
+  facet_wrap(~Label, ncol = 2, scales = "free") +  # Create a faceted plot for each category
+  coord_flip() +  # Flip coordinates for better readability
+  theme_minimal()
+# Save the plot
+ggsave("Plots/top_tf_idf_words_by_category.png", width = 9, height = 8, bg = "white")
