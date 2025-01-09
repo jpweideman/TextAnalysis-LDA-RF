@@ -56,19 +56,6 @@ word_freq %>%
 dev.copy(png, "Plots/word_cloud.png", width = 800, height = 800)
 dev.off()
 
-# # Group by the "Label" column and create word clouds for each category
-# cleaned_df %>%
-#   count(Label, word, sort = TRUE) %>%  # Count word frequencies by category
-#   group_split(Label) %>%              # Split the data by category
-#   walk(function(data) {
-#     category <- unique(data$Label)    # Get the category name
-    
-# # Word cloud for each category 
-# png(filename = paste0("Plots/word_cloud_", category, ".png"), width = 800, height = 800)
-# with(data, wordcloud(words = word, freq = n, min.freq = 200, colors = rainbow(4), random.order = FALSE))
-# dev.off()                       
-# })
-
 library(gridExtra)
 # Word cloud for each category
 wordcloud_list <- cleaned_df %>%
