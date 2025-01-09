@@ -30,7 +30,7 @@ ggplot(sentiment_scores, aes(x = Label, y = sentiment_score, fill = Label)) +
         fill = "Category"
     )
 # Save the plot
-ggsave("Plots/sentiment_scores_plot.png", width = 6, height = 6, bg = "white")
+ggsave("Plots/sentiment_scores_plot.png", width = 7, height = 6, bg = "white")
 
 # Aggregate tokenized words back into sentences
 cleaned_df <- read.csv("Data/cleaned_df.csv", stringsAsFactors = FALSE)
@@ -71,7 +71,7 @@ ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
     fill = "Category"
   )
 # Save the plot
-ggsave("Plots/sentiment_scores_avg_polarity_plot.png", width = 6, height = 6, bg = "white")
+ggsave("Plots/sentiment_scores_avg_polarity_plot.png", width = 7, height = 6, bg = "white")
 
 # Visualize the distribution of polarity with box plot
 # Sentiment analysis using qdap::polarity()
