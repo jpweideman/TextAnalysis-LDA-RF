@@ -6,7 +6,7 @@ library(qdap)
 
 # Read the dataset
 cleaned_df <- read.csv("Data/cleaned_df.csv")
-cleaned_df
+head(cleaned_df)
 
 
 ## Sentiment Analysis
@@ -19,6 +19,18 @@ sentiment_scores <- cleaned_df %>%
     mutate(sentiment_score = positive - negative)
 # View the sentiment scores
 print(sentiment_scores)
+# Visualize the sentiment scores
+ggplot(sentiment_scores, aes(x = Label, y = sentiment_score, fill = Label)) +
+    geom_col(alpha = 0.8) +
+    theme_minimal() +
+    labs(
+        title = "Sentiment Score by Category",
+        x = "Category",
+        y = "Sentiment Score",
+        fill = "Category"
+    )
+# Save the plot
+ggsave("Plots/sentiment_scores_plot.png", width = 6, height = 6, bg = "white")
 
 # Aggregate tokenized words back into sentences
 cleaned_df <- read.csv("Data/cleaned_df.csv", stringsAsFactors = FALSE)
@@ -59,7 +71,7 @@ ggplot(sentiment_results, aes(x = Label, y = avg_polarity, fill = Label)) +
     fill = "Category"
   )
 # Save the plot
-ggsave("Plots/sentiment_scores_plot.png", width = 10, height = 6, bg = "white")
+ggsave("Plots/sentiment_scores_avg_polarity_plot.png", width = 10, height = 6, bg = "white")
 
 # Visualize the distribution of polarity with box plot
 # Sentiment analysis using qdap::polarity()
@@ -88,7 +100,7 @@ ggplot(sentiment_results, aes(x = Label, y = polarity_score, fill = Label)) +
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for clarity
   )
 # Save the box plot
-ggsave("Plots/sentiment_box_plot.png", width = 10, height = 6, bg = "white")
+ggsave("Plots/sentiment_polarity_box_plot.png", width = 10, height = 6, bg = "white")
 
 # Perform sentiment analysis using the Bing lexicon for each category in the Label column
 # Read the reconstructed cleaned data

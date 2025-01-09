@@ -21,7 +21,7 @@ cleaned_df <- df |>
   filter(!str_detect(word, "[[:punct:]]"))
 cleaned_df
 
-# Count word frequencies (optional)
+# Count word frequencies 
 word_freq <- cleaned_df |>
   count(word, sort = TRUE)
 word_freq
