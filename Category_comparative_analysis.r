@@ -302,6 +302,9 @@ bigram_tf_idf %>%
 ggsave("Plots/top_tf_idf_bigrams_by_category.png", width = 9, height = 8, bg = "white")
 
 # Visualize the bigram network with network graph
+library(igraph)
+library(ggraph)
+
 visualize_bigrams <- function(bigrams, categories) {
   set.seed(1234)  # For reproducibility
   a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
@@ -335,128 +338,53 @@ ggsave("Plots/bigram_network.png", width = 15, height = 15, bg = "white")
 
 
 
-
-
-
-
-
+# Pairwise correlation analysis for word networks
+library(SnowballC)
 library(widyr)
-word_pairs <- cleaned_df %>%
-  unnest_tokens(word, full_text) %>%
-  filter(!word %in% stop_words$word) %>%
-  pairwise_count(word, Label, sort = TRUE)
+library(igraph)
+library(ggraph)
+library(patchwork)
+cleaned_df <- read.csv("Data/reconstructed_cleaned_df.csv", stringsAsFactors = FALSE)
+# List of categories 
+categories <- unique(cleaned_df$Label)
+# Create a list to store the plots
+plots <- list()
+# Loop through each category and generate the plot
+for (category in categories) {
+  cleaned_df_words <- cleaned_df %>%
+    filter(Label == category) %>%
+    mutate(section = row_number() %/% 10) %>%
+    filter(section > 0) %>%
+    unnest_tokens(word, full_text) %>%
+    filter(!word %in% stop_words$word) %>%
+    mutate(word = wordStem(word))
+  
+  word_cors <- cleaned_df_words %>%
+    group_by(word) %>%
+    filter(n() >= 20) %>%
+    pairwise_cor(word, section, sort = TRUE)
+  
+  # Remove NaN and Inf values
+  word_cors <- word_cors[!is.na(word_cors$correlation),]
+  word_cors <- word_cors[!is.infinite(word_cors$correlation),]
 
-
-
-cleaned_df
-library(widyr)
-word_cors <- cleaned_df %>%
-  unnest_tokens(word, full_text) %>%
-  count(Label, word, sort = TRUE) %>%
-  group_by(word) %>%
-  filter(n() >= 20) %>%
-  pairwise_cor(word, Label, sort = TRUE)
-
-word_cors
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# # Define negation words
-# negation_words <- c("not", "no", "never", "without")
-
-# # Read the dataset
-# df <- read_csv("Data/df_file.csv")
-# df <- df %>%
-#   mutate(Text_number = row_number())
-
-# # Tokenize the text column into words, while preserving negation words
-# cleaned_df <- df %>%
-#   unnest_tokens(word, Text) %>%
-#   # Remove stop words except negation words
-#   anti_join(stop_words %>% filter(!word %in% negation_words), by = "word") %>%
-#   # Remove numbers
-#   filter(!str_detect(word, "^[0-9]+$")) %>%
-#   # Remove punctuation
-#   filter(!str_detect(word, "[[:punct:]]")) %>%
-#   # Remove the Â character and empty words
-#   mutate(word = str_replace_all(word, "â", "")) %>%
-#   filter(word != "")
-
-# # Reconstruct the text into full sentences 
-# reconstructed_text <- cleaned_df %>%
-#   group_by(Label, Text_number) %>%
-#   summarize(
-#     full_text = paste(word, collapse = " "), # Combine words into full text
-#     .groups = "drop"
-#   )
-
-# # Create bigrams while ensuring negation words are preserved
-# word_bigrams <- reconstructed_text %>%
-#   unnest_tokens(bigram, full_text, token = "ngrams", n = 2) %>%
-#   separate(bigram, c("word1", "word2"), sep = " ") %>%
-#   # Remove stop words for bigrams, except negation words
-#   filter(
-#     !word1 %in% (stop_words %>% filter(!word %in% negation_words))$word &
-#     !word2 %in% (stop_words %>% filter(!word %in% negation_words))$word
-#   )
-
-# # Display the cleaned bigrams
-# word_bigrams
-
-# # Filter and join with sentiment lexicon
-# negated_words <- word_bigrams %>%
-#   filter(word1 %in% negation_words) %>%
-#   inner_join(get_sentiments("afinn"), by = c(word2 = "word")) %>%
-#   count(word1, word2, value, sort = TRUE) %>%
-#   ungroup()
-
-# negated_words
-# # Check if negated_words is empty
-# if (nrow(negated_words) == 0) {
-#   stop("No negated words found in the dataset.")
-# }
-
-# # Calculate contributions and prepare data for visualization
-# negated_words <- negated_words %>%
-#   mutate(
-#     contribution = n * value,
-#     word2 = reorder(paste(word2, word1, sep = "__"), contribution)
-#   ) %>%
-#   group_by(word1) %>%
-#   slice_max(abs(contribution), n = 12, with_ties = FALSE)  # Top 12 contributions per negation word
-
-# # Visualization
-# ggplot(negated_words, aes(x = word2, y = contribution, fill = n * value > 0)) +
-#   geom_col(show.legend = FALSE) +
-#   facet_wrap(~ word1, scales = "free") +  # Facet by negation word
-#   scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +  # Simplify bigram labels
-#   coord_flip() +
-#   labs(
-#     x = "Words preceded by negation term",
-#     y = "Sentiment value * # of occurrences",
-#     title = "Impact of Negation Words on Sentiment"
-#   ) +
-#   theme_minimal()
-
-# # Save the plot
-# ggsave("Plots/negated_words_contribution_plot.png", width = 12, height = 8, bg = "white")
-
-
-
-
-
+  # Generate the plot
+  plot <- word_cors %>%
+    filter(correlation > .70) %>%
+    graph_from_data_frame() %>%
+    ggraph(layout = "fr") +
+    geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+    geom_node_point(color = "lightblue", size = 5) +
+    geom_node_text(aes(label = name), repel = TRUE) +
+    theme_void() +
+    labs(title = paste(" Word Correlation Network for", category))
+  
+  # Store the plot in the list
+  plots[[category]] <- plot
+}
+# Combine the plots of different catgories into one plot 
+combined_plot <- wrap_plots(plots, ncol = 2) + 
+  plot_layout(guides = "collect") & 
+  theme(plot.background = element_rect(color = "black", linewidth = 1))
+# Save the combined plot
+ggsave("Plots/combined_word_correlation_network.png", plot = combined_plot, width = 15, height = 15, bg = "white")
