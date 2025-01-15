@@ -230,7 +230,7 @@ ggplot(category_words, aes(n/total)) +
 # Save the plot
 ggsave("Plots/term_frequency_distribution.png", width = 7, height = 6, bg = "white")
 
-# Term Frequency-Inverse Focument Frequency distribution by category
+# Term Frequency-Inverse Document Frequency distribution by category
 # Tokenize and calculate TF-IDF
 tf_idf_words <- cleaned_df %>%
   unnest_tokens(word, full_text) %>%
@@ -259,6 +259,9 @@ ggsave("Plots/top_tf_idf_words_by_category.png", width = 9, height = 8, bg = "wh
 
 ## Most relevant words and bigrams analysis
 
+library(dplyr)
+library(tidyr)
+library(tidytext)
 # Read the dataset
 cleaned_df <- read.csv("Data/reconstructed_cleaned_df.csv", stringsAsFactors = FALSE)
 
@@ -279,6 +282,7 @@ word_bigrams_united <- word_bigrams %>%
   unite(bigram, word1, word2, sep = " ")
 
 # TF-IDF for bigrams
+
 bigram_tf_idf <- word_bigrams_united %>%
   count(Label, bigram) %>%
   bind_tf_idf(bigram, Label, n) %>%
@@ -302,40 +306,38 @@ bigram_tf_idf %>%
 ggsave("Plots/top_tf_idf_bigrams_by_category.png", width = 9, height = 8, bg = "white")
 
 # Visualize the bigram network with network graph
+
 library(igraph)
 library(ggraph)
-
-visualize_bigrams <- function(bigrams, categories) {
+# Function to visualize bigram network
+visualize_bigrams <- function(bigrams,  threshold = 19) {
   set.seed(1234)  # For reproducibility
-  a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+  # Filter bigrams with a frequency above the threshold
+  filtered_bigrams <- bigrams %>% 
+    filter(n > threshold)
   
-  bigrams %>%
-    filter(n > 19) %>%  # Filter for more frequent bigrams
-    graph_from_data_frame() %>%
-    ggraph(layout = "fr") +
-    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, arrow = a) +
+  # Create edges and nodes from bigrams
+  edges <- filtered_bigrams %>% 
+    select(word1, word2, n)
+  
+  # Create a graph object
+  bigram_graph <- graph_from_data_frame(edges, directed = TRUE)
+  
+  # Plot the bigram network
+  ggraph(bigram_graph, layout = "fr") +
+    geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, arrow = grid::arrow(type = "closed", length = unit(.15, "inches"))) +
     geom_node_point(color = "lightblue", size = 5) +
-    geom_node_text(
-      aes(
-        label = name,
-        fontface = ifelse(name %in% categories, "bold", "plain"),  # Bold for categories
-        size = ifelse(name %in% categories, 6, 4)  # Larger size for categories
-      ),
-      show.legend = FALSE,  # Remove size legend
-      vjust = 1, hjust = 1
-    ) +
-    scale_size_identity() +  # Ensure size is used as defined
+    geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 4) +
     theme_void() +
     labs(title = "Bigram Network")
 }
-categories <- unique(bigram_counts$Label)
 # Visualize the bigram network
-visualize_bigrams(bigram_counts,categories)
-# Save the plot
+visualize_bigrams(bigram_counts, threshold = 19)
+# Save the corrected bigram network plot
 ggsave("Plots/bigram_network.png", width = 15, height = 15, bg = "white")
 
-
-## Pairwise correlation analysis for word networks
+# Pairwise correlation analysis for word networks
 
 library(SnowballC)
 library(widyr)
