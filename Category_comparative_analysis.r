@@ -335,21 +335,20 @@ visualize_bigrams(bigram_counts,categories)
 ggsave("Plots/bigram_network.png", width = 15, height = 15, bg = "white")
 
 
+## Pairwise correlation analysis for word networks
 
-
-
-# Pairwise correlation analysis for word networks
 library(SnowballC)
 library(widyr)
 library(igraph)
 library(ggraph)
 library(patchwork)
 cleaned_df <- read.csv("Data/reconstructed_cleaned_df.csv", stringsAsFactors = FALSE)
+
 # List of categories 
 categories <- unique(cleaned_df$Label)
 # Create a list to store the plots
 plots <- list()
-# Loop through each category and generate the plot
+# Loop through each category and plot
 for (category in categories) {
   cleaned_df_words <- cleaned_df %>%
     filter(Label == category) %>%
