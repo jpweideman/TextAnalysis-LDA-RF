@@ -212,16 +212,3 @@ final_plot <- wrap_plots(plot_list, ncol = 3) +
 final_plot
 # Save the plot
 ggsave("Plots/network_plots_topic_1_to_6.png", final_plot, width = 12, height = 8)
-
-
-
-
-
-
-
-
-
-
-
-
-
