@@ -156,8 +156,21 @@ results_df <- map_dfr(6:12, function(curr_k) {
 results_df <- results_df %>%
   arrange(desc(avg_correlation))
 results_df
+# Bar plot of results
+ggplot(results_df, aes(x = factor(k), y = avg_correlation)) +
+  geom_col(fill = "skyblue") +
+  labs(
+    title = "Average Internal Correlation by Number of Topics",
+    x = "Number of Topics",
+    y = "Average Internal Correlation"
+  ) +
+  theme_minimal()
+# Save the plot
+ggsave("Plots/avg_internal_correlation.png", width = 6, height = 8, bg = "white")
+
 # We see that k=6 produces topics with the highest average internal correlation. 
 # We will use k=6 for the final LDA model
+
 
 # Network plots for each topic in LDA model with k=6
 
@@ -199,4 +212,16 @@ final_plot <- wrap_plots(plot_list, ncol = 3) +
 final_plot
 # Save the plot
 ggsave("Plots/network_plots_topic_1_to_6.png", final_plot, width = 12, height = 8)
+
+
+
+
+
+
+
+
+
+
+
+
 
