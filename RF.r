@@ -6,6 +6,7 @@ library(tidytext)
 library(stopwords)
 library(randomForest)
 library(caret)
+library(ggplot2)
 
 # Load Dataset
 dataset <- read.csv('Data/reconstructed_cleaned_df.csv', stringsAsFactors = FALSE)
@@ -105,6 +106,25 @@ test_tree_1 <- predict(tree_0,
 confusionMatrix(data = test_tree_1, reference = ytest)
 
 
+## COMPARE the accuracy of the Random Forest and Decision Tree models
+
+rf_accuracy <- mean(opt_forest$test$predicted == ytest)
+tree_accuracy <- mean(test_tree_1 == ytest)
+# Create a data frame for plotting
+accuracy_data <- data.frame(
+  Model = c("Decision Tree", "Random Forest"),
+  Accuracy = c(tree_accuracy, rf_accuracy)
+)
+# Plot 
+ggplot(accuracy_data, aes(x = Model, y = Accuracy, fill = Model)) +
+  geom_bar(stat = "identity", width = 0.5) +
+  ylim(0, 1) +
+  labs(title = "Model Accuracy Comparison", x = "Model", y = "Accuracy") +
+  theme_minimal()
+# Save the plot
+ggsave("Plots/model_accuracy_comparison.png", width = 5, height = 6, dpi = 300, bg = "white")
+
+
 
 ## GRID SEARCH to find optimal ntree and mtry 
 
@@ -113,9 +133,9 @@ library(caret)
 library(dplyr)
 
 # Define the parameter grid
-ntree_values <- c(10, 100, 250, 500)              # Range of `ntree` values 
+ntree_values <- c(10, 100, 250, 500)              # Range of `ntree` values  
 floor(sqrt(ncol(x)))
-mtry_values <- seq(9, floor(sqrt(ncol(x)))+1, by = 20) # Range of `mtry` values
+mtry_values <- seq(10, floor(sqrt(ncol(x)))+1, by = 20) # Range of `mtry` values
 
 # Initialize a data frame to store results
 results <- data.frame(
@@ -163,22 +183,9 @@ write.csv(
   row.names = FALSE
 )
 
-# Find the best combination of ntree and mtry
-best_result <- results %>% arrange(desc(Accuracy)) %>% slice(1)
-print(best_result)
-# Best model has ntree = 250 and mtry = 29
-
-best_model <- readRDS(file = file.path("RF_results", "rf_model_ntree_250_mtry_29.rds"))
-
-# Variable Importance Plot
-varImpPlot(best_model)
-# Final Confusion Matrix
-confusionMatrix(data = unname(best_model$test$predicted), reference = ytest)
-
-# Plot the results in full_results.csv
+# Plot the grid search results 
 results <- read.csv('RF_results/full_results.csv')
 # Bar plot the results
-library(ggplot2)
 ggplot(results, aes(x = factor(mtry), y = Accuracy, fill = factor(ntree))) +
   geom_bar(stat = "identity", position = "dodge") +
   labs(title = "Random Forest Grid Search Results",
@@ -190,9 +197,24 @@ ggplot(results, aes(x = factor(mtry), y = Accuracy, fill = factor(ntree))) +
 # Save the plot
 ggsave("Plots/grid_search_results.png", width = 6, height = 9, dpi = 300, bg = "white")
 
+# Find the best combination of ntree and mtry
+best_result <- results %>% arrange(desc(Accuracy)) %>% slice(1)
+print(best_result)
 
-# Generate the confusion matrix
-conf_matrix <- confusionMatrix(data = unname(best_model$test$predicted), reference = ytest)
+best_model <- readRDS(file = file.path("RF_results", "rf_model_ntree_100_mtry_50.rds"))
+best_model
+# Plot the error rate of the best model
+png("Plots/error_rate_vs_ntree.png", width = 6, height = 6, units = "in", res = 300, bg = "white")
+plot(1:100, best_model$test$err.rate[,"Test"], type = "l",
+     xlab = "Number of Trees", ylab = "Test Error Rate",
+     main = "Test Error Rate vs. Number of Trees")
+dev.off()
+
+# Variable Importance Plot
+varImpPlot(best_model)
+# Final Confusion Matrix
+confusionMatrix(data = unname(best_model$test$predicted), reference = ytest)
+
 
 
 ## ROC Curves
@@ -217,7 +239,6 @@ for (i in 1:ncol(votes)) {
   roc_list[[i]] <- roc(true_labels, votes[, i], plot = FALSE)
 }
 
-library(ggplot2)
 
 # Combine ROC data for all classes
 roc_data <- do.call(rbind, lapply(1:length(roc_list), function(i) {
@@ -230,13 +251,12 @@ roc_data <- do.call(rbind, lapply(1:length(roc_list), function(i) {
 
 # Calculate AUC values for each class
 auc_values <- sapply(roc_list, function(x) auc(x))
-
 # Combine AUC values with class names
 roc_data <- do.call(rbind, lapply(1:length(roc_list), function(i) {
   data.frame(
     TPR = roc_list[[i]]$sensitivities,
     FPR = 1 - roc_list[[i]]$specificities,
-    Class = paste0(colnames(votes)[i], " (AUC = ", sprintf("%.2f", auc_values[i]), ")")
+    Class = paste0(colnames(votes)[i], " (AUC = ", sprintf("%.4f", auc_values[i]), ")")
   )
 }))
 
@@ -256,14 +276,7 @@ ggplot(roc_data, aes(x = FPR, y = TPR, color = Class)) +
 ggsave("Plots/roc_curves_with_auc.png", width = 9, height = 8, dpi = 300, bg = "white")
 
 
-
-
-
-
-
-
-
-
+best_model
 
 
 
