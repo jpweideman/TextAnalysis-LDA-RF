@@ -26,7 +26,6 @@ Each step offers insights into the structure and patterns of the dataset, demons
 - `Category_comparative_analysis.r`: Script for comparative analysis of the categories, including sentiment, readability, and word relevance.
 - `LDA.r`: Script for conducting LDA-based topic modeling and optimization.
 - `RF.r`: Script for implementing and optimizing the Random Forest classification model.
-- `Report.pdf`: A report of the analysis, findings, and methodologies used.
 
 ## Installation
 
